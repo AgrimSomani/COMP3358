@@ -9,16 +9,16 @@ public class UserInfoDAO {
     public static void insertUser(String username, String password) throws SQLException {
         String sql = "INSERT INTO UserInfo (username, password) VALUES (?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             stmt.setString(2, password);
-            stmt.executeQuery();
+            stmt.executeUpdate();
         }
     }
 
     // Authorize 
     public static boolean authorizeUser(String username, String password) throws SQLException {
-        String sql = "SELECT username FROM UserInfo WHERE username = ?, password = ?";
+        String sql = "SELECT username FROM UserInfo WHERE username = ? AND password = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement stmt = conn.prepareStatement(sql);) {
@@ -29,6 +29,20 @@ public class UserInfoDAO {
             }
         }
     }
+
+    // Check if user registered
+    public static boolean isUserRegistered(String username) throws SQLException {
+        String sql = "SELECT username FROM UserInfo WHERE username = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(sql);) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next(); // Returns true if user is registered with the provided username
+            }
+        }
+    }
+
 
     // Read all
     public static List<String> getAllUsers() throws SQLException {

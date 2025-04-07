@@ -22,6 +22,15 @@ public class OnlineUserDAO {
         }
     }
 
+    // Delete all sessions
+    public static void removeAllSession() throws SQLException {
+        String sql = "DELETE FROM OnlineUser";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.executeUpdate();
+        }
+    }
+
     // Check if user is online
     public static boolean isUserOnline(String username) throws SQLException {
         String sql = "SELECT username FROM OnlineUser WHERE username= ?";

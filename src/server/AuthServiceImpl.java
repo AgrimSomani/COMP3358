@@ -1,27 +1,22 @@
 package server;
 
-import java.io.*;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.SQLException;
 import shared.AuthService;
+import dao.OnlineUserDAO;
+import dao.UserInfoDAO;
 
 public class AuthServiceImpl extends UnicastRemoteObject implements AuthService {
-    private static final String USER_INFO_FILE = "UserInfo.txt";
-    private final Object user_info_lock = new Object();
-
-    private static final String ONLINE_USER_FILE = "OnlineUser.txt";
-    private final Object online_user_lock = new Object();
 
     public AuthServiceImpl() throws RemoteException {
         super();
-        // Clear the OnlineUser.txt file when server starts
+        // Clear the OnlineUser table when server starts
         try {
-            new FileWriter(ONLINE_USER_FILE, false).close();
+            OnlineUserDAO.removeAllSession();
             System.out.println("OnlineUser.txt cleared at server start");
-        } catch (IOException e) {
-            System.err.println("Error clearing OnlineUser.txt: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Error deleting all past sessions from database: " + e.getMessage());
         }
     }
 
@@ -80,123 +75,61 @@ public class AuthServiceImpl extends UnicastRemoteObject implements AuthService 
 
     // Helper methods
     private boolean validateUser(String username, String password) {
-        synchronized (user_info_lock) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(USER_INFO_FILE))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(":");
-                    if (parts.length == 2 && parts[0].equals(username) && parts[1].equals(password)) {
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                System.err.println("Error validating user: " + e.getMessage());
-            }
-            return false;
+        try {
+            return UserInfoDAO.authorizeUser(username, password);
+        } catch (SQLException e) {
+            System.err.println("Error validating user: " + e.getMessage());
         }
+        return false;
     }
 
     private boolean isUserRegistered(String username) {
-        synchronized (user_info_lock) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(USER_INFO_FILE))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(":");
-                    if (parts.length >= 1 && parts[0].equals(username)) {
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                System.err.println("Error checking if user is registered: " + e.getMessage());
-                // If the file doesn't exist yet, it means no users are registered
-                if (e instanceof FileNotFoundException) {
-                    return false;
-                }
-            }
-            return false;
+        try {
+            return UserInfoDAO.isUserRegistered(username);
+        } catch (SQLException e) {
+            System.err.println("Error checking whether user is registered: " + e.getMessage());
         }
+        return false;
     }
 
     private boolean isUserOnline(String username) {
-        synchronized (online_user_lock) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(ONLINE_USER_FILE))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.equals(username)) {
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                System.err.println("Error checking if user is online: " + e.getMessage());
-                // If the file doesn't exist yet, it means no users are online
-                if (e instanceof FileNotFoundException) {
-                    return false;
-                }
-            }
+        try {
+            return OnlineUserDAO.isUserOnline(username);
+        } catch (SQLException e) {
+            System.err.println("Error checking whether user is online: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private boolean addUserToUserInfo(String username, String password) {
+        
+        try {
+            UserInfoDAO.insertUser(username, password);
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error adding user to UserInfo: " + e.getMessage());
+            return false;
+        }        
+    }
+
+    private boolean addUserToOnlineList(String username) {
+        try  {
+            OnlineUserDAO.addSession(username);
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error adding user to OnlineUser " + e.getMessage());
             return false;
         }
     }
 
-    private boolean addUserToUserInfo(String username, String password) {
-        synchronized (user_info_lock) {
-            try (FileWriter writer = new FileWriter(USER_INFO_FILE, true)) {
-                writer.write(username + ":" + password + "\n");
-                return true;
-            } catch (IOException e) {
-                System.err.println("Error adding user to UserInfo.txt: " + e.getMessage());
-                return false;
-            }
-        }
-    }
-
-    private boolean addUserToOnlineList(String username) {
-        synchronized (online_user_lock) {
-            try (FileWriter writer = new FileWriter(ONLINE_USER_FILE, true)) {
-                writer.write(username + "\n");
-                return true;
-            } catch (IOException e) {
-                System.err.println("Error adding user to OnlineUser.txt: " + e.getMessage());
-                return false;
-            }
-        }
-
-    }
-
     private boolean removeUserFromOnlineList(String username) {
-        List<String> onlineUsers = new ArrayList<>();
-        boolean userFound = false;
-
-        synchronized (online_user_lock) {
-            // Read all online users
-            try (BufferedReader reader = new BufferedReader(new FileReader(ONLINE_USER_FILE))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.equals(username)) {
-                        userFound = true;
-                    } else {
-                        onlineUsers.add(line);
-                    }
-                }
-            } catch (IOException e) {
-                System.err.println("Error reading OnlineUser.txt: " + e.getMessage());
-                return false;
-            }
-
-            if (!userFound) {
-                return false;
-            }
-
-            // Write back all users except the one to remove
-            try (FileWriter writer = new FileWriter(ONLINE_USER_FILE, false)) {
-                for (String user : onlineUsers) {
-                    writer.write(user + "\n");
-                }
-                return true;
-            } catch (IOException e) {
-                System.err.println("Error updating OnlineUser.txt: " + e.getMessage());
-                return false;
-            }
-        }
+        try {
+            OnlineUserDAO.removeSession(username);
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error updating OnlineUser: " + e.getMessage());
+            return false;
+        }    
     }
 
 }
