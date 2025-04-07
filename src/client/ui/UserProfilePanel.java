@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class UserProfilePanel extends JPanel {
-    public UserProfilePanel() {
+    public UserProfilePanel(String username) {
         setLayout(new GridBagLayout());
         setBackground(new Color(0, 150, 0));
 
@@ -14,7 +14,7 @@ public class UserProfilePanel extends JPanel {
 
         // Profile Information Labels
         String[] profileInfo = {
-                "Kevin",
+                username,
                 "Number of wins: 10",
                 "Number of games: 20",
                 "Average time to win: 12.5s",

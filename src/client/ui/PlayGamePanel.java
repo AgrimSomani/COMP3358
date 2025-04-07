@@ -4,12 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PlayGamePanel extends JPanel {
-    public PlayGamePanel() {
+    public PlayGamePanel(String username) {
         setLayout(new BorderLayout(10, 10));
         setBackground(new Color(0, 150, 0));
 
         // Player Name
-        JLabel playerNameLabel = new JLabel("Kevin");
+        JLabel playerNameLabel = new JLabel(username);
         playerNameLabel.setForeground(Color.WHITE);
         playerNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         playerNameLabel.setHorizontalAlignment(JLabel.CENTER);

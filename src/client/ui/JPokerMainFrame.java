@@ -99,7 +99,7 @@ public class JPokerMainFrame extends JFrame {
 
     private void showUserProfile() {
         contentPanel.removeAll();
-        UserProfilePanel profilePanel = new UserProfilePanel();
+        UserProfilePanel profilePanel = new UserProfilePanel(currentUsername);
         contentPanel.add(profilePanel, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
@@ -107,7 +107,7 @@ public class JPokerMainFrame extends JFrame {
 
     private void showPlayGame() {
         contentPanel.removeAll();
-        PlayGamePanel gamePanel = new PlayGamePanel();
+        PlayGamePanel gamePanel = new PlayGamePanel(currentUsername);
         contentPanel.add(gamePanel, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
